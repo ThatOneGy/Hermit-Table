@@ -1,85 +1,73 @@
-import { auth, db } from './firebase.js';
-import { setDoc, getDoc, doc } from "https://www.gstatic.com/firebasejs/9.12.0/firebase-firestore.js";
+// Initialize Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyDAqAg7pNDeQfwN6ttudl7spQEoS0-teGg",
+  authDomain: "hermit-table.firebaseapp.com",
+  projectId: "hermit-table",
+  storageBucket: "hermit-table.appspot.com",
+  messagingSenderId: "773955109249",
+  appId: "1:773955109249:web:55f7a1b96af45828d9e880",
+};
+firebase.initializeApp(firebaseConfig);
 
-// Define the list of Hermitcraft member aliases
-const aliases = [
-  "Grian", "HermitCraft", "Xisuma", "MumboJumbo", "EthosLab",
-  "TangoTek", "Docm77", "Scar", "Cubfan135", "BdoubleO100",
-  "Keralis", "GoodTimesWithScar", "FalseSymmetry", "Welsknight", "ImpulseSV"
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// List of Hermitcraft member nicknames
+const hermitcraftAliases = [
+  "xisuma", "bdubs", "grian", "etho", "scar", "tango", "false", "impulse", "karl", "mumbo"
 ];
 
-// Function to generate a unique deck string based on aliases
-async function generateUniqueDeckString() {
-  let length = 1; // Start with 1 alias
-  let combination;
+// Function to generate a unique deck string
+function generateUniqueDeckString() {
+  let deckString = "";
 
-  while (true) {
-    combination = generateCombination(length);
-    const stringExists = await checkDeckStringExists(combination);
-
-    if (!stringExists) {
-      break; // Exit loop if the combination is unique
-    }
-
-    length++; // Increase length if the combination is not unique
+  while (deckString === "" || deckStringExists(deckString)) {
+    deckString = hermitcraftAliases[Math.floor(Math.random() * hermitcraftAliases.length)];
   }
 
-  return combination;
+  return deckString;
 }
 
-// Function to generate a combination of aliases with a given length
-function generateCombination(numAliases) {
-  let combination = [];
+// Check if the deck string exists in the Firestore
+async function deckStringExists(deckString) {
+  const deckRef = db.collection("decks").doc(deckString);
+  const doc = await deckRef.get();
+  return doc.exists;
+}
 
-  for (let i = 0; i < numAliases; i++) {
-    const randomIndex = Math.floor(Math.random() * aliases.length);
-    combination.push(aliases[randomIndex]);
+// Import Deck
+document.getElementById('importDeckBtn').addEventListener('click', async () => {
+  const deckString = document.getElementById('deckString').value;
+  if (deckString === "") {
+    alert("Please enter a deck string.");
+    return;
   }
 
-  return combination.join('-');
-}
+  const deckRef = db.collection("decks").doc(deckString);
+  const doc = await deckRef.get();
 
-// Function to check if a deck string already exists in Firestore
-async function checkDeckStringExists(deckString) {
-  const deckRef = doc(db, 'decks', deckString);
-  const docSnap = await getDoc(deckRef);
-
-  return docSnap.exists(); // Return true if the deck string already exists
-}
-
-// Event listener for the Create Deck button
-document.getElementById('createDeckBtn').addEventListener('click', async () => {
-  try {
-    // Generate a unique string for the card deck
-    const uniqueDeckString = await generateUniqueDeckString();
-
-    // Save the deck string to Firestore
-    const deckRef = doc(db, 'decks', uniqueDeckString);
-    await setDoc(deckRef, { createdBy: auth.currentUser.uid });
-
-    console.log('Deck string saved to Firestore:', uniqueDeckString);
-    alert('Your unique deck string is: ' + uniqueDeckString);
-  } catch (error) {
-    console.error('Error generating unique deck string:', error.message);
+  if (doc.exists) {
+    console.log('Deck imported:', doc.data());
+    // Add logic to use the imported deck
+  } else {
+    alert("Deck string does not exist. Please create a new deck.");
   }
 });
 
-// Event listener for the Join Deck button
-document.getElementById('joinDeckBtn').addEventListener('click', async () => {
-  const inputDeckString = document.getElementById('inputDeckString').value;
-
-  try {
-    const deckRef = doc(db, 'decks', inputDeckString);
-    const docSnap = await getDoc(deckRef);
-
-    if (docSnap.exists()) {
-      console.log('Deck joined successfully.');
-      // Optionally, handle successful joining here (e.g., redirect to game)
-    } else {
-      console.log('Invalid deck string.');
-      alert('Invalid deck string. Please try again.');
-    }
-  } catch (error) {
-    console.error('Error joining deck:', error.message);
+// Create New Deck
+document.getElementById('createDeckBtn').addEventListener('click', async () => {
+  let deckString = generateUniqueDeckString();
+  
+  // Ensure the deck string is unique
+  while (await deckStringExists(deckString)) {
+    deckString = generateUniqueDeckString();
   }
+
+  // Create a new deck in Firestore
+  await db.collection("decks").doc(deckString).set({
+    cards: [] // Initialize with an empty deck or default values
+  });
+
+  console.log('New deck created with string:', deckString);
+  // Add logic to initialize the new deck
 });
