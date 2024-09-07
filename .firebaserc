@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "hermit table": "hermit-table"
+  },
+  "targets": {},
+  "etags": {},
+  "dataconnectEmulatorConfig": {}
+}

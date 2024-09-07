@@ -44,3 +44,4 @@ document.getElementById('loginBtn').addEventListener('click', () => {
       console.error('Error logging in:', error.message);
     });
 });
+
