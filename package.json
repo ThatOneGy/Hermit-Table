@@ -1,0 +1,20 @@
+{
+    "name": "hermit-table",
+    "version": "1.0.0",
+    "description": "A web app for playing TCG games",
+    "main": "index.js",
+    "scripts": {
+      "start": "node index.js",
+      "build": "echo 'No build step'",
+      "deploy": "firebase deploy"
+    },
+    "dependencies": {
+      "firebase-admin": "^11.7.1",
+      "firebase-functions": "^4.3.0"
+    },
+    "engines": {
+      "node": "16"
+    },
+    "devDependencies": {}
+  }
+  
